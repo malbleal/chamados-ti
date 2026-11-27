@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Painel — Chamados de TI</title>
   <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#174ea6">
+  <meta name="theme-color" content="#1621AD">
   <link rel="stylesheet" href="/static/css/estilo.css">
 </head>
 <body>
   <header class="topo">
     <strong>Chamados de TI — Painel</strong>
     <span class="acoes">
-      <button id="btn-meus">Meus chamados</button>
+      <button id="btn-solicitacoes-admin">Solicitações</button>
+      <button id="btn-usuarios-admin">Usuários</button>
       <button id="btn-unidades-admin">Unidades</button>
       <button id="btn-historico-admin">Histórico</button>
       <button id="btn-sair-admin">Sair</button>
@@ -45,10 +46,24 @@
     <form id="form-nova-unidade">
       <label for="nome-unidade">Nova unidade</label>
       <input id="nome-unidade" maxlength="120" required>
-      <button type="submit">Criar unidade</button>
+      <button type="submit" class="botao-primario">Criar unidade</button>
       <p class="msg" id="msg-unidade"></p>
     </form>
     <div id="lista-unidades"></div>
+  </section>
+
+  <section class="lista oculto" id="secao-solicitacoes-admin">
+    <button id="btn-voltar-solicitacoes-admin">Voltar</button>
+    <h1>Solicitações de cadastro</h1>
+    <p class="dica">Ao aprovar, o usuário é criado com a senha padrão definida no .env e será obrigado a trocá-la no primeiro login.</p>
+    <div id="lista-solicitacoes"></div>
+  </section>
+
+  <section class="lista oculto" id="secao-usuarios-admin">
+    <button id="btn-voltar-usuarios-admin">Voltar</button>
+    <h1>Usuários</h1>
+    <p class="dica">Para criar um novo administrador: aprove a solicitação dele em "Solicitações" e depois clique em "Tornar admin" aqui.</p>
+    <div id="lista-usuarios"></div>
   </section>
 
   <section class="chat oculto" id="secao-detalhe-admin">
@@ -64,7 +79,7 @@
         <option value="em_atendimento">em_atendimento</option>
         <option value="resolvido">resolvido</option>
       </select>
-      <button type="submit">Salvar status</button>
+      <button type="submit" class="botao-primario">Salvar status</button>
       <p class="msg" id="msg-status"></p>
     </form>
     <h3>Conversa</h3>
@@ -72,7 +87,7 @@
     <form id="form-mensagem-admin">
       <label for="mensagem-admin">Mensagem</label>
       <textarea id="mensagem-admin" rows="2" required></textarea>
-      <button type="submit">Enviar</button>
+      <button type="submit" class="botao-primario">Enviar</button>
     </form>
     <h3>Histórico</h3>
     <div id="detalhe-eventos-admin"></div>

@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Meus chamados — Chamados de TI</title>
   <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#174ea6">
+  <meta name="theme-color" content="#1621AD">
   <link rel="stylesheet" href="/static/css/estilo.css">
 </head>
 <body>
   <header class="topo">
     <strong>Chamados de TI</strong>
-    <button id="btn-painel" class="oculto">Painel</button>
     <button id="btn-historico">Histórico</button>
     <button id="btn-sair">Sair</button>
   </header>
@@ -37,10 +36,10 @@
         <select id="unidade" required>
           <option value="">Selecione...</option>
         </select>
-        
+
         <label for="descricao">Descrição</label>
         <textarea id="descricao" rows="4" required></textarea>
-        <button type="submit">Abrir chamado</button>
+        <button type="submit" class="botao-primario">Abrir chamado</button>
         <p class="msg" id="msg-novo"></p>
       </form>
     </section>
@@ -72,7 +71,7 @@
         <option value="em_atendimento">em_atendimento</option>
         <option value="resolvido">resolvido</option>
       </select>
-      <button type="submit">Salvar status</button>
+      <button type="submit" class="botao-primario">Salvar status</button>
       <p class="msg" id="msg-status-usuario"></p>
     </form>
     <h3>Conversa</h3>
@@ -80,7 +79,7 @@
     <form id="form-mensagem">
       <label for="mensagem">Mensagem</label>
       <textarea id="mensagem" rows="2" required></textarea>
-      <button type="submit">Enviar</button>
+      <button type="submit" class="botao-primario">Enviar</button>
     </form>
     <h3>Histórico</h3>
     <div id="detalhe-eventos"></div>

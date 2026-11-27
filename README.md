@@ -1,6 +1,3 @@
-
-App para criação de chamados do Super Raimundinho.
-
 # PWA de Chamados de TI
 
 Aplicação web progressiva (PWA) para abertura e acompanhamento de chamados de TI,
@@ -13,6 +10,7 @@ Desenvolvida para uso em rede local, com backend FastAPI e banco PostgreSQL (Neo
 - Abertura de chamados com unidade obrigatória
 - Acompanhamento de chamados com histórico de mensagens e eventos
 - Painel administrativo: gestão de usuários, unidades e configurações
+- Métricas mensais de chamados abertos e resolvidos (filtro por ano)
 - Notificações de novos chamados e mensagens
 - PWA instalável (manifest + service worker com cache offline dos estáticos)
 

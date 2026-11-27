@@ -5,19 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chamados de TI</title>
   <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#174ea6">
+  <meta name="theme-color" content="#1621AD">
   <link rel="stylesheet" href="/static/css/estilo.css">
 </head>
 <body>
   <main class="card">
     <h1>Chamados de TI</h1>
+
     <form id="form-login">
       <label for="matricula">Matrícula</label>
       <input id="matricula" name="matricula" autocomplete="username" required>
       <label for="senha">Senha</label>
       <input id="senha" name="senha" type="password" autocomplete="current-password" required>
-      <button type="submit">Entrar</button>
+      <button type="submit" class="botao-primario">Entrar</button>
       <p class="msg" id="msg"></p>
+      <button type="button" id="btn-mostrar-solicitacao" class="botao-link">Não tem acesso? Solicitar cadastro</button>
+    </form>
+
+    <form id="form-solicitacao" class="oculto">
+      <p class="dica">Preencha seus dados e aguarde a aprovação do administrador. A senha inicial será definida por ele.</p>
+      <label for="sol-matricula">Matrícula</label>
+      <input id="sol-matricula" maxlength="50" required>
+      <label for="sol-nome">Nome completo</label>
+      <input id="sol-nome" maxlength="150" required>
+      <label for="sol-cargo">Cargo</label>
+      <input id="sol-cargo" maxlength="120" required>
+      <button type="submit" class="botao-primario">Enviar solicitação</button>
+      <p class="msg" id="msg-solicitacao"></p>
+      <button type="button" id="btn-voltar-login" class="botao-link">Voltar para o login</button>
     </form>
   </main>
 <script src="/static/js/app.js" defer></script>

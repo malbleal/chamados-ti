@@ -51,6 +51,56 @@ if (formLogin) {
   });
 }
 
+// ---- Solicitação de acesso (tela de login) ----
+const btnMostrarSolicitacao = document.getElementById("btn-mostrar-solicitacao");
+const btnVoltarLogin = document.getElementById("btn-voltar-login");
+const formSolicitacao = document.getElementById("form-solicitacao");
+
+if (btnMostrarSolicitacao && formLogin && formSolicitacao) {
+  btnMostrarSolicitacao.addEventListener("click", () => {
+    formLogin.classList.add("oculto");
+    formSolicitacao.classList.remove("oculto");
+  });
+}
+if (btnVoltarLogin && formLogin && formSolicitacao) {
+  btnVoltarLogin.addEventListener("click", () => {
+    formSolicitacao.classList.add("oculto");
+    formLogin.classList.remove("oculto");
+  });
+}
+if (formSolicitacao) {
+  formSolicitacao.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const msgSol = document.getElementById("msg-solicitacao");
+    msgSol.textContent = "Enviando...";
+    msgSol.className = "msg";
+    try {
+      const resposta = await fetch("/cadastro/solicitacao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matricula: document.getElementById("sol-matricula").value.trim(),
+          nome: document.getElementById("sol-nome").value.trim(),
+          cargo: document.getElementById("sol-cargo").value.trim(),
+        }),
+      });
+      const dados = await resposta.json();
+      if (!resposta.ok) {
+        msgSol.textContent = dados.detail || "Nao foi possivel enviar a solicitacao.";
+        msgSol.className = "msg erro";
+        return;
+      }
+      msgSol.textContent =
+        "Solicitacao enviada! Aguarde a aprovacao do administrador e faca login com a senha inicial.";
+      msgSol.className = "msg ok";
+      formSolicitacao.reset();
+    } catch (erro) {
+      msgSol.textContent = "Falha de conexao com o servidor.";
+      msgSol.className = "msg erro";
+    }
+  });
+}
+
 // ---- Troca obrigatória de senha ----
 const formTroca = document.getElementById("form-troca-senha");
 if (formTroca) {
@@ -104,6 +154,33 @@ function cabecalhoAuth() {
     "Content-Type": "application/json",
     Authorization: "Bearer " + localStorage.getItem("token"),
   };
+}
+
+// ---- Navegação centralizada: mostra UMA seção e esconde todas as outras ----
+// corrige o problema de seções empilhadas (cascata) nas duas páginas
+function mostrarSecao(secaoAlvo) {
+  const secoes = document.querySelectorAll(
+    "main.lista, #secao-historico, #secao-detalhe, " +
+      "#secao-historico-admin, #secao-unidades-admin, " +
+      "#secao-solicitacoes-admin, #secao-usuarios-admin, #secao-detalhe-admin"
+  );
+  for (const secao of secoes) secao.classList.add("oculto");
+  if (secaoAlvo) secaoAlvo.classList.remove("oculto");
+  window.scrollTo(0, 0);
+}
+
+function irParaPrincipal() {
+  mostrarSecao(document.querySelector("main.lista"));
+}
+
+// Linha "categoria · unidade · status" reutilizada na tela do cliente e do admin
+function infoChamado(c) {
+  return (
+    c.categoria +
+    (c.unidade_nome ? " · " + c.unidade_nome : "") +
+    " · status: " +
+    c.status
+  );
 }
 
 const listaChamados = document.getElementById("lista-chamados");
@@ -193,7 +270,7 @@ function renderizarChamados(container, itens, vazio, funcaoAbrir) {
       (c) => `
       <article class="chamado" data-id="${c.id}">
         <h3>#${c.id} — ${esc(c.titulo)}</h3>
-        <p class="meta">${esc(c.categoria)} · aberto em ${new Date(c.criado_em).toLocaleString("pt-BR")}</p>
+        <p class="meta">${esc(c.categoria)}${c.unidade_nome ? " · " + esc(c.unidade_nome) : ""} · aberto em ${new Date(c.criado_em).toLocaleString("pt-BR")}</p>
         <span class="selo ${esc(c.status)}">${esc(c.status)}</span>
       </article>`
     )
@@ -251,8 +328,7 @@ async function abrirDetalhe(id) {
 
     document.getElementById("detalhe-titulo").textContent =
       "#" + dados.chamado.id + " — " + dados.chamado.titulo;
-    document.getElementById("detalhe-info").textContent =
-      dados.chamado.categoria + " · status: " + dados.chamado.status;
+    document.getElementById("detalhe-info").textContent = infoChamado(dados.chamado);
     document.getElementById("detalhe-descricao").textContent = dados.chamado.descricao;
 
     const formStatusUsuario = document.getElementById("form-status-usuario");
@@ -272,7 +348,7 @@ async function abrirDetalhe(id) {
       const div = document.createElement("div");
       div.className = "mensagem";
       const autor = document.createElement("strong");
-      autor.textContent = "Usuario " + m.autor_id;
+      autor.textContent = m.autor_nome || "Usuario " + m.autor_id;
       div.appendChild(autor);
       div.appendChild(document.createTextNode(" — " + m.mensagem));
       divMsgs.appendChild(div);
@@ -289,11 +365,7 @@ async function abrirDetalhe(id) {
       divEv.appendChild(div);
     }
 
-    document.querySelector("main.lista").classList.add("oculto");
-    const histUsuario = document.getElementById("secao-historico");
-    if (histUsuario) histUsuario.classList.add("oculto");
-    document.getElementById("secao-detalhe").classList.remove("oculto");
-    window.scrollTo(0, 0);
+    mostrarSecao(document.getElementById("secao-detalhe"));
   } catch (erro) {
     // detalhe falhou; a lista continua funcionando
   }
@@ -302,11 +374,10 @@ async function abrirDetalhe(id) {
 const btnVoltar = document.getElementById("btn-voltar");
 if (btnVoltar) {
   btnVoltar.addEventListener("click", () => {
-    document.getElementById("secao-detalhe").classList.add("oculto");
     if (veioDoHistorico) {
-      document.getElementById("secao-historico").classList.remove("oculto");
+      mostrarSecao(document.getElementById("secao-historico"));
     } else {
-      document.querySelector("main.lista").classList.remove("oculto");
+      irParaPrincipal();
     }
     veioDoHistorico = false;
     chamadoAbertoId = null;
@@ -345,8 +416,6 @@ if (listaTodos) {
   } else {
     window.location.href = "/static/index.html";
   }
-  const btnMeus = document.getElementById("btn-meus");
-  if (btnMeus) btnMeus.addEventListener("click", () => (window.location.href = "/static/chamados.html"));
   const btnSairAdmin = document.getElementById("btn-sair-admin");
   if (btnSairAdmin)
     btnSairAdmin.addEventListener("click", () => {
@@ -401,8 +470,7 @@ async function abrirDetalheAdmin(id) {
     chamadoAdminId = id;
     document.getElementById("detalhe-titulo-admin").textContent =
       "#" + dados.chamado.id + " — " + dados.chamado.titulo;
-    document.getElementById("detalhe-info-admin").textContent =
-      dados.chamado.categoria + " · status: " + dados.chamado.status;
+    document.getElementById("detalhe-info-admin").textContent = infoChamado(dados.chamado);
     document.getElementById("novo-status").value = dados.chamado.status;
     document.getElementById("detalhe-descricao-admin").textContent = dados.chamado.descricao;
 
@@ -417,7 +485,7 @@ async function abrirDetalheAdmin(id) {
       const div = document.createElement("div");
       div.className = "mensagem";
       const autor = document.createElement("strong");
-      autor.textContent = "Usuario " + m.autor_id;
+      autor.textContent = m.autor_nome || "Usuario " + m.autor_id;
       div.appendChild(autor);
       div.appendChild(document.createTextNode(" — " + m.mensagem));
       divMsgs.appendChild(div);
@@ -432,11 +500,7 @@ async function abrirDetalheAdmin(id) {
       divEv.appendChild(div);
     }
 
-    document.querySelector("main.lista").classList.add("oculto");
-    const histAdmin = document.getElementById("secao-historico-admin");
-    if (histAdmin) histAdmin.classList.add("oculto");
-    document.getElementById("secao-detalhe-admin").classList.remove("oculto");
-    window.scrollTo(0, 0);
+    mostrarSecao(document.getElementById("secao-detalhe-admin"));
   } catch (erro) {
     // detalhe falhou; a lista continua funcionando
   }
@@ -445,11 +509,10 @@ async function abrirDetalheAdmin(id) {
 const btnVoltarAdmin = document.getElementById("btn-voltar-admin");
 if (btnVoltarAdmin) {
   btnVoltarAdmin.addEventListener("click", () => {
-    document.getElementById("secao-detalhe-admin").classList.add("oculto");
     if (veioDoHistoricoAdmin) {
-      document.getElementById("secao-historico-admin").classList.remove("oculto");
+      mostrarSecao(document.getElementById("secao-historico-admin"));
     } else {
-      document.querySelector("main.lista").classList.remove("oculto");
+      irParaPrincipal();
     }
     veioDoHistoricoAdmin = false;
     chamadoAdminId = null;
@@ -477,8 +540,7 @@ if (formStatus) {
       }
       msgStatus.textContent = "Status alterado para " + dados.status + ".";
       msgStatus.className = "msg ok";
-      document.getElementById("detalhe-info-admin").textContent =
-        dados.categoria + " · status: " + dados.status;
+      document.getElementById("detalhe-info-admin").textContent = infoChamado(dados);
       carregarTodosChamados();
     } catch (erro) {
       msgStatus.textContent = "Falha de conexao com o servidor.";
@@ -509,28 +571,18 @@ if (formMensagemAdmin) {
   });
 }
 
-// Botao "Painel" na tela de chamados, visivel so para admin
-const btnPainel = document.getElementById("btn-painel");
-if (btnPainel && localStorage.getItem("isAdmin") === "1") {
-  btnPainel.classList.remove("oculto");
-  btnPainel.addEventListener("click", () => (window.location.href = "/static/admin.html"));
-}
-
-// ---- Navegação para o Histórico ----
+// ---- Navegação: Histórico ----
 const btnHistorico = document.getElementById("btn-historico");
 if (btnHistorico) {
   btnHistorico.addEventListener("click", () => {
     carregarMeusChamados();
-    document.querySelector("main.lista").classList.add("oculto");
-    document.getElementById("secao-historico").classList.remove("oculto");
-    window.scrollTo(0, 0);
+    mostrarSecao(document.getElementById("secao-historico"));
   });
 }
 const btnVoltarHistorico = document.getElementById("btn-voltar-historico");
 if (btnVoltarHistorico) {
   btnVoltarHistorico.addEventListener("click", () => {
-    document.getElementById("secao-historico").classList.add("oculto");
-    document.querySelector("main.lista").classList.remove("oculto");
+    irParaPrincipal();
     carregarMeusChamados();
   });
 }
@@ -540,17 +592,14 @@ if (btnHistoricoAdmin) {
   btnHistoricoAdmin.addEventListener("click", () => {
     carregarTodosChamados();
     carregarMetricas();
-    document.querySelector("main.lista").classList.add("oculto");
-    document.getElementById("secao-historico-admin").classList.remove("oculto");
-    window.scrollTo(0, 0);
+    mostrarSecao(document.getElementById("secao-historico-admin"));
   });
 }
 
 const btnVoltarHistoricoAdmin = document.getElementById("btn-voltar-historico-admin");
 if (btnVoltarHistoricoAdmin) {
   btnVoltarHistoricoAdmin.addEventListener("click", () => {
-    document.getElementById("secao-historico-admin").classList.add("oculto");
-    document.querySelector("main.lista").classList.remove("oculto");
+    irParaPrincipal();
     carregarTodosChamados();
   });
 }
@@ -661,8 +710,7 @@ if (formStatusUsuario) {
       msgStatusUsuario.textContent = "Status alterado para " + dados.status + ".";
       msgStatusUsuario.className = "msg ok";
       document.getElementById("novo-status-usuario").value = dados.status;
-      document.getElementById("detalhe-info").textContent =
-        dados.categoria + " · status: " + dados.status;
+      document.getElementById("detalhe-info").textContent = infoChamado(dados);
       carregarMeusChamados();
     } catch (erro) {
       msgStatusUsuario.textContent = "Falha de conexao com o servidor.";
@@ -700,7 +748,7 @@ async function carregarUnidades() {
       selo.textContent = u.ativa ? "ativa" : "inativa";
       div.appendChild(selo);
       const acoes = document.createElement("p");
-      acoes.className = "meta";
+      acoes.className = "meta acoes-unidade";
       const btnAtiva = document.createElement("button");
       btnAtiva.textContent = u.ativa ? "Desativar" : "Ativar";
       btnAtiva.addEventListener("click", () => alterarUnidade(u.id, { ativa: !u.ativa }));
@@ -776,16 +824,190 @@ const btnUnidadesAdmin = document.getElementById("btn-unidades-admin");
 if (btnUnidadesAdmin) {
   btnUnidadesAdmin.addEventListener("click", () => {
     carregarUnidades();
-    document.querySelector("main.lista").classList.add("oculto");
-    document.getElementById("secao-unidades-admin").classList.remove("oculto");
-    window.scrollTo(0, 0);
+    mostrarSecao(document.getElementById("secao-unidades-admin"));
   });
 }
 
 const btnVoltarUnidadesAdmin = document.getElementById("btn-voltar-unidades-admin");
 if (btnVoltarUnidadesAdmin) {
   btnVoltarUnidadesAdmin.addEventListener("click", () => {
-    document.getElementById("secao-unidades-admin").classList.add("oculto");
-    document.querySelector("main.lista").classList.remove("oculto");
+    irParaPrincipal();
+  });
+}
+
+// ---- Solicitações de cadastro (admin) ----
+async function carregarSolicitacoes() {
+  const lista = document.getElementById("lista-solicitacoes");
+  if (!lista) return;
+  try {
+    const resposta = await fetch("/cadastro/pendentes", { headers: cabecalhoAuth() });
+    if (resposta.status === 401 || resposta.status === 403) {
+      window.location.href = "/static/index.html";
+      return;
+    }
+    const pendentes = await resposta.json();
+    lista.textContent = "";
+    if (!pendentes.length) {
+      const p = document.createElement("p");
+      p.textContent = "Nenhuma solicitacao pendente.";
+      lista.appendChild(p);
+      return;
+    }
+    for (const s of pendentes) {
+      const div = document.createElement("div");
+      div.className = "chamado";
+      const h3 = document.createElement("h3");
+      h3.textContent = s.nome;
+      div.appendChild(h3);
+      const meta = document.createElement("p");
+      meta.className = "meta";
+      meta.textContent = "Matricula: " + s.matricula + " · Cargo: " + s.cargo;
+      div.appendChild(meta);
+      const acoes = document.createElement("p");
+      acoes.className = "meta acoes-unidade";
+      const btnAprovar = document.createElement("button");
+      btnAprovar.textContent = "Aprovar";
+      btnAprovar.addEventListener("click", () => revisarSolicitacao(s.id, "aprovar"));
+      const btnRecusar = document.createElement("button");
+      btnRecusar.textContent = "Recusar";
+      btnRecusar.addEventListener("click", () => revisarSolicitacao(s.id, "recusar"));
+      acoes.appendChild(btnAprovar);
+      acoes.appendChild(btnRecusar);
+      div.appendChild(acoes);
+      lista.appendChild(div);
+    }
+  } catch (erro) {
+    lista.textContent = "";
+    const p = document.createElement("p");
+    p.textContent = "Falha ao carregar solicitacoes.";
+    lista.appendChild(p);
+  }
+}
+
+async function revisarSolicitacao(id, acao) {
+  try {
+    const resposta = await fetch("/cadastro/" + id + "/" + acao, {
+      method: "POST",
+      headers: cabecalhoAuth(),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      alert(dados.detail || "Nao foi possivel revisar a solicitacao.");
+      return;
+    }
+    alert(dados.mensagem);
+    carregarSolicitacoes();
+  } catch (erro) {
+    alert("Falha de conexao com o servidor.");
+  }
+}
+
+const btnSolicitacoesAdmin = document.getElementById("btn-solicitacoes-admin");
+if (btnSolicitacoesAdmin) {
+  btnSolicitacoesAdmin.addEventListener("click", () => {
+    carregarSolicitacoes();
+    mostrarSecao(document.getElementById("secao-solicitacoes-admin"));
+  });
+}
+
+const btnVoltarSolicitacoesAdmin = document.getElementById("btn-voltar-solicitacoes-admin");
+if (btnVoltarSolicitacoesAdmin) {
+  btnVoltarSolicitacoesAdmin.addEventListener("click", () => {
+    irParaPrincipal();
+  });
+}
+
+// ---- Usuários: criar novos administradores (admin) ----
+async function carregarUsuarios() {
+  const lista = document.getElementById("lista-usuarios");
+  if (!lista) return;
+  try {
+    const resposta = await fetch("/admin/usuarios", { headers: cabecalhoAuth() });
+    if (resposta.status === 401 || resposta.status === 403) {
+      window.location.href = "/static/index.html";
+      return;
+    }
+    const usuarios = await resposta.json();
+    lista.textContent = "";
+    if (!usuarios.length) {
+      const p = document.createElement("p");
+      p.textContent = "Nenhum usuario cadastrado ainda.";
+      lista.appendChild(p);
+      return;
+    }
+    for (const u of usuarios) {
+      const div = document.createElement("div");
+      div.className = "chamado";
+      const h3 = document.createElement("h3");
+      h3.textContent = u.nome;
+      div.appendChild(h3);
+      const meta = document.createElement("p");
+      meta.className = "meta";
+      meta.textContent =
+        "Matricula: " + u.matricula +
+        (u.cargo ? " · " + u.cargo : "") +
+        (u.is_active ? "" : " · INATIVO");
+      div.appendChild(meta);
+      const selo = document.createElement("span");
+      selo.className = "selo " + (u.is_admin ? "em_atendimento" : "fechado");
+      selo.textContent = u.is_admin ? "admin" : "colaborador";
+      div.appendChild(selo);
+      if (u.is_admin) {
+        const p = document.createElement("p");
+        p.className = "meta";
+        p.textContent = "Voce";
+        div.appendChild(p);
+      } else {
+        const acoes = document.createElement("p");
+        acoes.className = "meta acoes-unidade";
+        const btnPromover = document.createElement("button");
+        btnPromover.textContent = "Tornar admin";
+        btnPromover.addEventListener("click", () => promoverUsuario(u.id, u.nome));
+        acoes.appendChild(btnPromover);
+        div.appendChild(acoes);
+      }
+      lista.appendChild(div);
+    }
+  } catch (erro) {
+    lista.textContent = "";
+    const p = document.createElement("p");
+    p.textContent = "Falha ao carregar usuarios.";
+    lista.appendChild(p);
+  }
+}
+
+async function promoverUsuario(id, nome) {
+  if (!confirm("Tornar " + nome + " administrador? Essa pessoa podera aprovar cadastros, ver metricas e gerenciar todos os chamados.")) {
+    return;
+  }
+  try {
+    const resposta = await fetch("/admin/usuarios/" + id + "/promover", {
+      method: "POST",
+      headers: cabecalhoAuth(),
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      alert(dados.detail || "Nao foi possivel promover o usuario.");
+      return;
+    }
+    alert(dados.mensagem);
+    carregarUsuarios();
+  } catch (erro) {
+    alert("Falha de conexao com o servidor.");
+  }
+}
+
+const btnUsuariosAdmin = document.getElementById("btn-usuarios-admin");
+if (btnUsuariosAdmin) {
+  btnUsuariosAdmin.addEventListener("click", () => {
+    carregarUsuarios();
+    mostrarSecao(document.getElementById("secao-usuarios-admin"));
+  });
+}
+
+const btnVoltarUsuariosAdmin = document.getElementById("btn-voltar-usuarios-admin");
+if (btnVoltarUsuariosAdmin) {
+  btnVoltarUsuariosAdmin.addEventListener("click", () => {
+    irParaPrincipal();
   });
 }
