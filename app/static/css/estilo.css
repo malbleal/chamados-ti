@@ -1,0 +1,99 @@
+﻿* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f4f6f8;
+  color: #222;
+}
+.card {
+  max-width: 360px;
+  margin: 60px auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+h1 { font-size: 1.25rem; color: #174ea6; margin-top: 0; }
+label { display: block; margin: 12px 0 4px; font-size: .9rem; }
+input, textarea, select, button {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+button {
+  margin-top: 16px;
+  background: #174ea6;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+button:hover { background: #123c82; }
+.msg { margin-top: 12px; font-size: .9rem; }
+.msg.erro { color: #b00020; }
+.msg.ok { color: #1b7f3b; }
+.topo {
+  background: #174ea6;
+  color: #fff;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.topo button { width: auto; margin: 0; background: #fff; color: #174ea6; }
+.lista { max-width: 720px; margin: 24px auto; padding: 0 16px; }
+.chamado {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  cursor: pointer;
+}
+.chamado h3 { margin: 0 0 4px; font-size: 1rem; }
+.chamado .meta { font-size: .85rem; color: #555; margin: 0 0 6px; }
+.selo { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .75rem; color: #fff; background: #888; }
+.selo.aberto { background: #b45f06; }
+.selo.em_atendimento { background: #174ea6; }
+.selo.fechado { background: #1b7f3b; }
+.oculto { display: none; }
+.chat {
+  max-width: 720px;
+  margin: 24px auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.mensagem { border-left: 3px solid #174ea6; padding: 6px 10px; margin: 8px 0; font-size: .9rem; background: #f7f9fc; }
+.evento { font-size: .8rem; color: #666; margin: 4px 0; }
+.selo.resolvido { background: #0f7b6c; }
+.topo .acoes { display: flex; gap: 8px; }
+.tabela-metricas {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tabela-metricas th, .tabela-metricas td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: .9rem;
+}
+.tabela-metricas th { background: #174ea6; color: #fff; }
+
+.abas-anos { display: flex; gap: 8px; margin-bottom: 12px; }
+.aba-ano {
+  padding: 6px 14px;
+  border: 1px solid #174ea6;
+  background: #fff;
+  color: #174ea6;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.aba-ano.ativa { background: #174ea6; color: #fff; }

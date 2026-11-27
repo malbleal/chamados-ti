@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meus chamados — Chamados de TI</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#174ea6">
+  <link rel="stylesheet" href="/static/css/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <strong>Chamados de TI</strong>
+    <button id="btn-painel" class="oculto">Painel</button>
+    <button id="btn-historico">Histórico</button>
+    <button id="btn-sair">Sair</button>
+  </header>
+
+  <main class="lista">
+    <section class="card">
+      <h1>Novo chamado</h1>
+      <form id="form-novo-chamado">
+        <label for="titulo">Título</label>
+        <input id="titulo" maxlength="200" required>
+        <label for="categoria">Categoria</label>
+        <select id="categoria" required>
+          <option value="">Selecione...</option>
+          <option>Hardware</option>
+          <option>Software</option>
+          <option>Rede / Internet</option>
+          <option>Acesso / Senha</option>
+          <option>Impressora</option>
+          <option>Outro</option>
+        </select>
+
+        <label for="unidade">Unidade</label>
+        <select id="unidade" required>
+          <option value="">Selecione...</option>
+        </select>
+        
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" rows="4" required></textarea>
+        <button type="submit">Abrir chamado</button>
+        <p class="msg" id="msg-novo"></p>
+      </form>
+    </section>
+
+    <section>
+      <h1>Meus chamados</h1>
+      <div id="lista-chamados"></div>
+      <p class="msg" id="msg-lista"></p>
+    </section>
+  </main>
+
+  <section class="lista oculto" id="secao-historico">
+    <button id="btn-voltar-historico">Voltar</button>
+    <h1>Histórico</h1>
+    <div id="lista-historico"></div>
+  </section>
+
+  <section class="chat oculto" id="secao-detalhe">
+    <button id="btn-voltar">Voltar</button>
+    <h2 id="detalhe-titulo"></h2>
+    <p class="meta" id="detalhe-info"></p>
+    <h3>Descrição</h3>
+    <p id="detalhe-descricao"></p>
+
+    <form id="form-status-usuario" class="oculto">
+      <label for="novo-status-usuario">Alterar status</label>
+      <select id="novo-status-usuario">
+        <option value="aberto">aberto</option>
+        <option value="em_atendimento">em_atendimento</option>
+        <option value="resolvido">resolvido</option>
+      </select>
+      <button type="submit">Salvar status</button>
+      <p class="msg" id="msg-status-usuario"></p>
+    </form>
+    <h3>Conversa</h3>
+    <div id="detalhe-mensagens"></div>
+    <form id="form-mensagem">
+      <label for="mensagem">Mensagem</label>
+      <textarea id="mensagem" rows="2" required></textarea>
+      <button type="submit">Enviar</button>
+    </form>
+    <h3>Histórico</h3>
+    <div id="detalhe-eventos"></div>
+  </section>
+
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>

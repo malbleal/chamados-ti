@@ -1,0 +1,9 @@
+﻿{
+  "name": "Chamados de TI",
+  "short_name": "Chamados",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#174ea6",
+  "description": "PWA para abertura e acompanhamento de chamados de TI"
+}

@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trocar senha — Chamados de TI</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#174ea6">
+  <link rel="stylesheet" href="/static/css/estilo.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Trocar senha</h1>
+    <p>Defina sua nova senha para continuar. Mínimo de 8 caracteres, ao menos 1 letra, sem sequência de 3+ dígitos e sem conter sua matrícula.</p>
+    <form id="form-troca-senha">
+      <label for="nova-senha">Nova senha</label>
+      <input id="nova-senha" type="password" autocomplete="new-password" required>
+      <label for="confirma-senha">Confirmar nova senha</label>
+      <input id="confirma-senha" type="password" autocomplete="new-password" required>
+      <button type="submit">Salvar nova senha</button>
+      <p class="msg" id="msg"></p>
+    </form>
+  </main>
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>

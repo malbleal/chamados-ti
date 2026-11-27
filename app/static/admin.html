@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel — Chamados de TI</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#174ea6">
+  <link rel="stylesheet" href="/static/css/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <strong>Chamados de TI — Painel</strong>
+    <span class="acoes">
+      <button id="btn-meus">Meus chamados</button>
+      <button id="btn-unidades-admin">Unidades</button>
+      <button id="btn-historico-admin">Histórico</button>
+      <button id="btn-sair-admin">Sair</button>
+    </span>
+  </header>
+
+  <main class="lista">
+    <h1>Todos os chamados</h1>
+    <div id="lista-todos"></div>
+    <p class="msg" id="msg-admin"></p>
+  </main>
+
+  <section class="lista oculto" id="secao-historico-admin">
+    <button id="btn-voltar-historico-admin">Voltar</button>
+    <h1>Métricas mensais</h1>
+    <div id="abas-anos-metricas" class="abas-anos"></div>
+    <table class="tabela-metricas">
+      <thead>
+        <tr><th>Mês</th><th>Abertos</th><th>Resolvidos</th></tr>
+      </thead>
+      <tbody id="corpo-metricas"></tbody>
+    </table>
+    <h1>Histórico</h1>
+    <div id="lista-historico-admin"></div>
+  </section>
+
+  <section class="lista oculto" id="secao-unidades-admin">
+    <button id="btn-voltar-unidades-admin">Voltar</button>
+    <h1>Unidades</h1>
+    <form id="form-nova-unidade">
+      <label for="nome-unidade">Nova unidade</label>
+      <input id="nome-unidade" maxlength="120" required>
+      <button type="submit">Criar unidade</button>
+      <p class="msg" id="msg-unidade"></p>
+    </form>
+    <div id="lista-unidades"></div>
+  </section>
+
+  <section class="chat oculto" id="secao-detalhe-admin">
+    <button id="btn-voltar-admin">Voltar</button>
+    <h2 id="detalhe-titulo-admin"></h2>
+    <p class="meta" id="detalhe-info-admin"></p>
+    <h3>Descrição</h3>
+    <p id="detalhe-descricao-admin"></p>
+    <form id="form-status">
+      <label for="novo-status">Alterar status</label>
+      <select id="novo-status">
+        <option value="aberto">aberto</option>
+        <option value="em_atendimento">em_atendimento</option>
+        <option value="resolvido">resolvido</option>
+      </select>
+      <button type="submit">Salvar status</button>
+      <p class="msg" id="msg-status"></p>
+    </form>
+    <h3>Conversa</h3>
+    <div id="detalhe-mensagens-admin"></div>
+    <form id="form-mensagem-admin">
+      <label for="mensagem-admin">Mensagem</label>
+      <textarea id="mensagem-admin" rows="2" required></textarea>
+      <button type="submit">Enviar</button>
+    </form>
+    <h3>Histórico</h3>
+    <div id="detalhe-eventos-admin"></div>
+  </section>
+
+  <script src="/static/js/app.js" defer></script>
+</body>
+</html>
