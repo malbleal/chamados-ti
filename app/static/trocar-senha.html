@@ -7,11 +7,24 @@
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#1621AD">
   <link rel="stylesheet" href="/static/css/estilo.css">
+  <style>
+    .regras-senha { list-style: none; margin: 4px 0 8px; padding: 0; font-size: 0.86rem; }
+    .regras-senha li { padding: 3px 0 3px 24px; position: relative; color: #a06a12; }
+    .regras-senha li::before { content: "○"; position: absolute; left: 6px; font-weight: 700; }
+    .regras-senha li.ok { color: var(--verde); font-weight: 600; }
+    .regras-senha li.ok::before { content: "●"; }
+  </style>
 </head>
 <body>
   <main class="card">
     <h1>Trocar senha</h1>
-    <p>Defina sua nova senha para continuar. Mínimo de 8 caracteres, ao menos 1 letra, sem sequência de 3+ dígitos e sem conter sua matrícula.</p>
+    <p>Defina sua nova senha. Ela precisa atender a todas as regras abaixo — os círculos ficam verdes conforme você digita.</p>
+    <ul class="regras-senha">
+      <li id="regra-tamanho">Pelo menos 8 caracteres</li>
+      <li id="regra-letra">Pelo menos 1 letra</li>
+      <li id="regra-sequencia">Sem 3 ou mais dígitos em sequência (ex.: 123 ou 987)</li>
+      <li id="regra-matricula">Não pode conter a sua matrícula</li>
+    </ul>
     <form id="form-troca-senha">
       <label for="nova-senha">Nova senha</label>
       <input id="nova-senha" type="password" autocomplete="new-password" required>

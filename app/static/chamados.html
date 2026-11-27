@@ -11,8 +11,11 @@
 <body>
   <header class="topo">
     <strong>Chamados de TI</strong>
-    <button id="btn-historico">Histórico</button>
-    <button id="btn-sair">Sair</button>
+    <span class="acoes">
+      <button id="btn-inicio">Chamados</button>
+      <button id="btn-historico">Histórico</button>
+      <button id="btn-sair">Sair</button>
+    </span>
   </header>
 
   <main class="lista">
@@ -52,13 +55,11 @@
   </main>
 
   <section class="lista oculto" id="secao-historico">
-    <button id="btn-voltar-historico">Voltar</button>
     <h1>Histórico</h1>
     <div id="lista-historico"></div>
   </section>
 
   <section class="chat oculto" id="secao-detalhe">
-    <button id="btn-voltar">Voltar</button>
     <h2 id="detalhe-titulo"></h2>
     <p class="meta" id="detalhe-info"></p>
     <h3>Descrição</h3>
@@ -80,6 +81,7 @@
       <label for="mensagem">Mensagem</label>
       <textarea id="mensagem" rows="2" required></textarea>
       <button type="submit" class="botao-primario">Enviar</button>
+      <p class="msg" id="msg-mensagem"></p>
     </form>
     <h3>Histórico</h3>
     <div id="detalhe-eventos"></div>

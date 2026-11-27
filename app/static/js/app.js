@@ -6,9 +6,17 @@ if ("serviceWorker" in navigator) {
 }
 
 // ---- Utilidades ----
-function salvarSessao(resposta) {
+function salvarSessao(resposta, matricula) {
   localStorage.setItem("token", resposta.access_token);
   localStorage.setItem("isAdmin", resposta.is_admin ? "1" : "0");
+  // Guardamos a matricula para a regra "a senha nao pode conter a matricula"
+  if (matricula) localStorage.setItem("matricula", matricula);
+}
+
+function esquecerSessao() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("isAdmin");
+  localStorage.removeItem("matricula");
 }
 
 function mostrarMsg(texto, tipo) {
@@ -16,6 +24,176 @@ function mostrarMsg(texto, tipo) {
   if (!p) return;
   p.textContent = texto;
   p.className = "msg " + (tipo || "");
+}
+
+function esc(texto) {
+  return String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function cabecalhoAuth() {
+  return {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + localStorage.getItem("token"),
+  };
+}
+
+// ---- Estado global do chat aberto (uma tela por pagina) ----
+let chamadoAbertoId = null;   // tela do usuario
+let chamadoAdminId = null;    // painel do admin
+let chatAssinatura = "";      // conteudo atual do chat, para so re-renderizar se mudar
+
+// ---- Navegação centralizada: mostra UMA seção e esconde todas as outras ----
+function mostrarSecao(secaoAlvo) {
+  const secoes = document.querySelectorAll(
+    "main.lista, #secao-historico, #secao-detalhe, " +
+      "#secao-historico-admin, #secao-unidades-admin, " +
+      "#secao-solicitacoes-admin, #secao-usuarios-admin, #secao-detalhe-admin"
+  );
+  for (const secao of secoes) secao.classList.add("oculto");
+  if (secaoAlvo) secaoAlvo.classList.remove("oculto");
+  window.scrollTo(0, 0);
+}
+
+function irParaPrincipal() {
+  mostrarSecao(document.querySelector("main.lista"));
+  chamadoAbertoId = null;
+  chamadoAdminId = null;
+  chatAssinatura = "";
+}
+
+// ---- Renderização do chat (compartilhada entre as duas telas) ----
+function renderizarMensagensEm(containerId, mensagens) {
+  const divMsgs = document.getElementById(containerId);
+  if (!divMsgs) return;
+  divMsgs.textContent = "";
+  if (!mensagens.length) {
+    const p = document.createElement("p");
+    p.textContent = "Sem mensagens ainda.";
+    divMsgs.appendChild(p);
+    return;
+  }
+  for (const m of mensagens) {
+    const div = document.createElement("div");
+    div.className = "mensagem";
+    const autor = document.createElement("strong");
+    autor.textContent = m.autor_nome || "Usuario " + m.autor_id;
+    div.appendChild(autor);
+    div.appendChild(document.createTextNode(" — " + m.mensagem));
+    divMsgs.appendChild(div);
+  }
+}
+
+function renderizarEventosEm(containerId, eventos) {
+  const divEv = document.getElementById(containerId);
+  if (!divEv) return;
+  divEv.textContent = "";
+  for (const e of eventos) {
+    const div = document.createElement("div");
+    div.className = "evento";
+    div.textContent =
+      (e.evento ?? e.tipo ?? "") + " · " +
+      new Date(e.criado_em).toLocaleString("pt-BR");
+    divEv.appendChild(div);
+  }
+}
+
+// ---- Atualização automática do chat aberto (a cada 5 segundos) ----
+// Antes, a resposta do outro lado só aparecia se você saísse e reabrisse
+// o chamado. Agora o chat se atualiza sozinho enquanto estiver na tela.
+function contextoChatAtivo() {
+  const contextos = [
+    {
+      secaoId: "secao-detalhe",
+      msgsId: "detalhe-mensagens",
+      eventosId: "detalhe-eventos",
+      idAtual: () => chamadoAbertoId,
+    },
+    {
+      secaoId: "secao-detalhe-admin",
+      msgsId: "detalhe-mensagens-admin",
+      eventosId: "detalhe-eventos-admin",
+      idAtual: () => chamadoAdminId,
+    },
+  ];
+  for (const ctx of contextos) {
+    const secao = document.getElementById(ctx.secaoId);
+    if (secao && !secao.classList.contains("oculto") && ctx.idAtual()) return ctx;
+  }
+  return null;
+}
+
+async function atualizarChatAberto() {
+  const ctx = contextoChatAtivo();
+  if (!ctx) return;
+  try {
+    const resposta = await fetch("/chamados/" + ctx.idAtual(), {
+      headers: cabecalhoAuth(),
+    });
+    if (!resposta.ok) return;
+    const dados = await resposta.json();
+    const assinatura = JSON.stringify([dados.mensagens, dados.eventos]);
+    if (assinatura === chatAssinatura) return; // nada mudou; nao pisca a tela
+    chatAssinatura = assinatura;
+    renderizarMensagensEm(ctx.msgsId, dados.mensagens);
+    renderizarEventosEm(ctx.eventosId, dados.eventos);
+  } catch (erro) {
+    // sem conexao agora; tenta de novo no proximo ciclo
+  }
+}
+
+setInterval(atualizarChatAberto, 5000);
+
+// ---- Política de senha (mesmas regras validadas no backend,
+//      em app/core/seguranca.py -> validar_nova_senha) ----
+function temSequenciaDeDigitos(valor) {
+  for (let i = 0; i < valor.length - 2; i++) {
+    const a = valor.charCodeAt(i);
+    const b = valor.charCodeAt(i + 1);
+    const c = valor.charCodeAt(i + 2);
+    const tresDigitos =
+      /[0-9]/.test(valor[i]) &&
+      /[0-9]/.test(valor[i + 1]) &&
+      /[0-9]/.test(valor[i + 2]);
+    if (
+      tresDigitos &&
+      ((b - a === 1 && c - b === 1) || (a - b === 1 && b - c === 1))
+    ) {
+      return true; // 123 (crescente) ou 987 (decrescente)
+    }
+  }
+  return false;
+}
+
+function regrasDeSenha() {
+  const matricula = (localStorage.getItem("matricula") || "").toLowerCase();
+  return [
+    { id: "regra-tamanho", ok: (v) => v.length >= 8 },
+    {
+      id: "regra-letra",
+      ok: (v) => [...v].some((ch) => ch.toUpperCase() !== ch.toLowerCase()),
+    },
+    { id: "regra-sequencia", ok: (v) => !temSequenciaDeDigitos(v) },
+    {
+      id: "regra-matricula",
+      ok: (v) => !matricula || !v.toLowerCase().includes(matricula),
+    },
+  ];
+}
+
+function senhaAtendeRegras(valor) {
+  let todasOk = true;
+  for (const regra of regrasDeSenha()) {
+    const passou = regra.ok(valor);
+    const item = document.getElementById(regra.id);
+    if (item) item.classList.toggle("ok", passou);
+    if (!passou) todasOk = false;
+  }
+  return todasOk;
 }
 
 // ---- Login ----
@@ -37,7 +215,7 @@ if (formLogin) {
         mostrarMsg(dados.detail || "Nao foi possivel entrar.", "erro");
         return;
       }
-      salvarSessao(dados);
+      salvarSessao(dados, matricula);
       if (dados.must_change_password) {
         window.location.href = "/static/trocar-senha.html";
       } else {
@@ -101,16 +279,27 @@ if (formSolicitacao) {
   });
 }
 
-// ---- Troca obrigatória de senha ----
+// ---- Troca obrigatória de senha (com checklist das regras) ----
 const formTroca = document.getElementById("form-troca-senha");
-if (formTroca) {
+const campoNovaSenha = document.getElementById("nova-senha");
+if (formTroca && campoNovaSenha) {
   if (!localStorage.getItem("token")) {
     window.location.href = "/static/index.html";
   }
+  // Marca as regras ao vivo enquanto o usuario digita
+  campoNovaSenha.addEventListener("input", () => {
+    senhaAtendeRegras(campoNovaSenha.value);
+  });
+  senhaAtendeRegras(campoNovaSenha.value);
+
   formTroca.addEventListener("submit", async (evento) => {
     evento.preventDefault();
-    const nova = document.getElementById("nova-senha").value;
+    const nova = campoNovaSenha.value;
     const confirma = document.getElementById("confirma-senha").value;
+    if (!senhaAtendeRegras(nova)) {
+      mostrarMsg("A senha nao atende as regras destacadas acima.", "erro");
+      return;
+    }
     if (nova !== confirma) {
       mostrarMsg("As senhas nao coincidem.", "erro");
       return;
@@ -129,8 +318,7 @@ if (formTroca) {
         mostrarMsg(dados.detail || "Nao foi possivel trocar a senha.", "erro");
         return;
       }
-      localStorage.removeItem("token");
-      localStorage.removeItem("isAdmin");
+      esquecerSessao();
       mostrarMsg(dados.mensagem || "Senha alterada. Faca login novamente.", "ok");
       setTimeout(() => (window.location.href = "/static/index.html"), 2000);
     } catch (erro) {
@@ -140,49 +328,6 @@ if (formTroca) {
 }
 
 // ---- Tela de chamados (lista, novo chamado, detalhe/chat) ----
-function esc(texto) {
-  return String(texto)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function cabecalhoAuth() {
-  return {
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + localStorage.getItem("token"),
-  };
-}
-
-// ---- Navegação centralizada: mostra UMA seção e esconde todas as outras ----
-// corrige o problema de seções empilhadas (cascata) nas duas páginas
-function mostrarSecao(secaoAlvo) {
-  const secoes = document.querySelectorAll(
-    "main.lista, #secao-historico, #secao-detalhe, " +
-      "#secao-historico-admin, #secao-unidades-admin, " +
-      "#secao-solicitacoes-admin, #secao-usuarios-admin, #secao-detalhe-admin"
-  );
-  for (const secao of secoes) secao.classList.add("oculto");
-  if (secaoAlvo) secaoAlvo.classList.remove("oculto");
-  window.scrollTo(0, 0);
-}
-
-function irParaPrincipal() {
-  mostrarSecao(document.querySelector("main.lista"));
-}
-
-// Linha "categoria · unidade · status" reutilizada na tela do cliente e do admin
-function infoChamado(c) {
-  return (
-    c.categoria +
-    (c.unidade_nome ? " · " + c.unidade_nome : "") +
-    " · status: " +
-    c.status
-  );
-}
-
 const listaChamados = document.getElementById("lista-chamados");
 if (listaChamados) {
   if (!localStorage.getItem("token")) {
@@ -196,9 +341,16 @@ if (listaChamados) {
 const btnSair = document.getElementById("btn-sair");
 if (btnSair) {
   btnSair.addEventListener("click", () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("isAdmin");
+    esquecerSessao();
     window.location.href = "/static/index.html";
+  });
+}
+
+const btnInicio = document.getElementById("btn-inicio");
+if (btnInicio) {
+  btnInicio.addEventListener("click", () => {
+    irParaPrincipal();
+    carregarMeusChamados();
   });
 }
 
@@ -237,7 +389,7 @@ if (formNovo) {
   });
 }
 
-// ---- Passo D-c: unidades ativas no formulário de novo chamado ----
+// ---- Unidades ativas no formulário de novo chamado ----
 async function carregarUnidadesFormulario() {
   const select = document.getElementById("unidade");
   if (!select) return;
@@ -280,8 +432,6 @@ function renderizarChamados(container, itens, vazio, funcaoAbrir) {
   );
 }
 
-let veioDoHistorico = false;
-
 async function carregarMeusChamados() {
   const msgLista = document.getElementById("msg-lista");
   try {
@@ -297,27 +447,19 @@ async function carregarMeusChamados() {
       listaChamados,
       ativos,
       "Nenhum chamado em aberto. Abra um no formulario acima.",
-      (id) => {
-        veioDoHistorico = false;
-        abrirDetalhe(id);
-      }
+      (id) => abrirDetalhe(id)
     );
     renderizarChamados(
       document.getElementById("lista-historico"),
       resolvidos,
       "Nenhum chamado resolvido ainda.",
-      (id) => {
-        veioDoHistorico = true;
-        abrirDetalhe(id);
-      }
+      (id) => abrirDetalhe(id)
     );
   } catch (erro) {
     msgLista.textContent = "Falha ao carregar chamados.";
     msgLista.className = "msg erro";
   }
 }
-
-let chamadoAbertoId = null;
 
 async function abrirDetalhe(id) {
   try {
@@ -337,33 +479,9 @@ async function abrirDetalhe(id) {
       formStatusUsuario.classList.remove("oculto");
     }
 
-    const divMsgs = document.getElementById("detalhe-mensagens");
-    divMsgs.textContent = "";
-    if (!dados.mensagens.length) {
-      const p = document.createElement("p");
-      p.textContent = "Sem mensagens ainda.";
-      divMsgs.appendChild(p);
-    }
-    for (const m of dados.mensagens) {
-      const div = document.createElement("div");
-      div.className = "mensagem";
-      const autor = document.createElement("strong");
-      autor.textContent = m.autor_nome || "Usuario " + m.autor_id;
-      div.appendChild(autor);
-      div.appendChild(document.createTextNode(" — " + m.mensagem));
-      divMsgs.appendChild(div);
-    }
-
-    const divEv = document.getElementById("detalhe-eventos");
-    divEv.textContent = "";
-    for (const e of dados.eventos) {
-      const div = document.createElement("div");
-      div.className = "evento";
-      div.textContent =
-        (e.evento ?? e.tipo ?? "") + " · " +
-        new Date(e.criado_em).toLocaleString("pt-BR");
-      divEv.appendChild(div);
-    }
+    chatAssinatura = JSON.stringify([dados.mensagens, dados.eventos]);
+    renderizarMensagensEm("detalhe-mensagens", dados.mensagens);
+    renderizarEventosEm("detalhe-eventos", dados.eventos);
 
     mostrarSecao(document.getElementById("secao-detalhe"));
   } catch (erro) {
@@ -371,17 +489,13 @@ async function abrirDetalhe(id) {
   }
 }
 
-const btnVoltar = document.getElementById("btn-voltar");
-if (btnVoltar) {
-  btnVoltar.addEventListener("click", () => {
-    if (veioDoHistorico) {
-      mostrarSecao(document.getElementById("secao-historico"));
-    } else {
-      irParaPrincipal();
-    }
-    veioDoHistorico = false;
-    chamadoAbertoId = null;
-  });
+function infoChamado(c) {
+  return (
+    c.categoria +
+    (c.unidade_nome ? " · " + c.unidade_nome : "") +
+    " · status: " +
+    c.status
+  );
 }
 
 const formMensagem = document.getElementById("form-mensagem");
@@ -390,6 +504,7 @@ if (formMensagem) {
     evento.preventDefault();
     if (!chamadoAbertoId) return;
     const campo = document.getElementById("mensagem");
+    const msgChat = document.getElementById("msg-mensagem");
     try {
       const resposta = await fetch("/chamados/" + chamadoAbertoId + "/mensagens", {
         method: "POST",
@@ -398,17 +513,26 @@ if (formMensagem) {
       });
       if (resposta.ok) {
         campo.value = "";
+        if (msgChat) msgChat.textContent = "";
         abrirDetalhe(chamadoAbertoId);
+      } else {
+        const dados = await resposta.json().catch(() => ({}));
+        if (msgChat) {
+          msgChat.textContent = dados.detail || "Nao foi possivel enviar a mensagem.";
+          msgChat.className = "msg erro";
+        }
       }
     } catch (erro) {
-      // mensagem nao enviada; tenta novamente
+      if (msgChat) {
+        msgChat.textContent = "Falha de conexao com o servidor.";
+        msgChat.className = "msg erro";
+      }
     }
   });
 }
 
 // ---- Painel do admin ----
 const listaTodos = document.getElementById("lista-todos");
-let chamadoAdminId = null;
 
 if (listaTodos) {
   if (localStorage.getItem("token") && localStorage.getItem("isAdmin") === "1") {
@@ -419,13 +543,18 @@ if (listaTodos) {
   const btnSairAdmin = document.getElementById("btn-sair-admin");
   if (btnSairAdmin)
     btnSairAdmin.addEventListener("click", () => {
-      localStorage.removeItem("token");
-      localStorage.removeItem("isAdmin");
+      esquecerSessao();
       window.location.href = "/static/index.html";
     });
 }
 
-let veioDoHistoricoAdmin = false;
+const btnInicioAdmin = document.getElementById("btn-inicio-admin");
+if (btnInicioAdmin) {
+  btnInicioAdmin.addEventListener("click", () => {
+    irParaPrincipal();
+    carregarTodosChamados();
+  });
+}
 
 async function carregarTodosChamados() {
   const msgAdmin = document.getElementById("msg-admin");
@@ -442,19 +571,13 @@ async function carregarTodosChamados() {
       listaTodos,
       ativos,
       "Nenhum chamado em aberto.",
-      (id) => {
-        veioDoHistoricoAdmin = false;
-        abrirDetalheAdmin(id);
-      }
+      (id) => abrirDetalheAdmin(id)
     );
     renderizarChamados(
       document.getElementById("lista-historico-admin"),
       resolvidos,
       "Nenhum chamado resolvido ainda.",
-      (id) => {
-        veioDoHistoricoAdmin = true;
-        abrirDetalheAdmin(id);
-      }
+      (id) => abrirDetalheAdmin(id)
     );
   } catch (erro) {
     msgAdmin.textContent = "Falha ao carregar chamados.";
@@ -474,50 +597,14 @@ async function abrirDetalheAdmin(id) {
     document.getElementById("novo-status").value = dados.chamado.status;
     document.getElementById("detalhe-descricao-admin").textContent = dados.chamado.descricao;
 
-    const divMsgs = document.getElementById("detalhe-mensagens-admin");
-    divMsgs.textContent = "";
-    if (!dados.mensagens.length) {
-      const p = document.createElement("p");
-      p.textContent = "Sem mensagens ainda.";
-      divMsgs.appendChild(p);
-    }
-    for (const m of dados.mensagens) {
-      const div = document.createElement("div");
-      div.className = "mensagem";
-      const autor = document.createElement("strong");
-      autor.textContent = m.autor_nome || "Usuario " + m.autor_id;
-      div.appendChild(autor);
-      div.appendChild(document.createTextNode(" — " + m.mensagem));
-      divMsgs.appendChild(div);
-    }
-
-    const divEv = document.getElementById("detalhe-eventos-admin");
-    divEv.textContent = "";
-    for (const e of dados.eventos) {
-      const div = document.createElement("div");
-      div.className = "evento";
-      div.textContent = e.evento + " · " + new Date(e.criado_em).toLocaleString("pt-BR");
-      divEv.appendChild(div);
-    }
+    chatAssinatura = JSON.stringify([dados.mensagens, dados.eventos]);
+    renderizarMensagensEm("detalhe-mensagens-admin", dados.mensagens);
+    renderizarEventosEm("detalhe-eventos-admin", dados.eventos);
 
     mostrarSecao(document.getElementById("secao-detalhe-admin"));
   } catch (erro) {
     // detalhe falhou; a lista continua funcionando
   }
-}
-
-const btnVoltarAdmin = document.getElementById("btn-voltar-admin");
-if (btnVoltarAdmin) {
-  btnVoltarAdmin.addEventListener("click", () => {
-    if (veioDoHistoricoAdmin) {
-      mostrarSecao(document.getElementById("secao-historico-admin"));
-    } else {
-      irParaPrincipal();
-    }
-    veioDoHistoricoAdmin = false;
-    chamadoAdminId = null;
-    carregarTodosChamados();
-  });
 }
 
 const formStatus = document.getElementById("form-status");
@@ -555,6 +642,7 @@ if (formMensagemAdmin) {
     evento.preventDefault();
     if (!chamadoAdminId) return;
     const campo = document.getElementById("mensagem-admin");
+    const msgChat = document.getElementById("msg-mensagem-admin");
     try {
       const resposta = await fetch("/chamados/" + chamadoAdminId + "/mensagens", {
         method: "POST",
@@ -563,10 +651,20 @@ if (formMensagemAdmin) {
       });
       if (resposta.ok) {
         campo.value = "";
+        if (msgChat) msgChat.textContent = "";
         abrirDetalheAdmin(chamadoAdminId);
+      } else {
+        const dados = await resposta.json().catch(() => ({}));
+        if (msgChat) {
+          msgChat.textContent = dados.detail || "Nao foi possivel enviar a mensagem.";
+          msgChat.className = "msg erro";
+        }
       }
     } catch (erro) {
-      // mensagem nao enviada; tenta novamente
+      if (msgChat) {
+        msgChat.textContent = "Falha de conexao com o servidor.";
+        msgChat.className = "msg erro";
+      }
     }
   });
 }
@@ -579,13 +677,6 @@ if (btnHistorico) {
     mostrarSecao(document.getElementById("secao-historico"));
   });
 }
-const btnVoltarHistorico = document.getElementById("btn-voltar-historico");
-if (btnVoltarHistorico) {
-  btnVoltarHistorico.addEventListener("click", () => {
-    irParaPrincipal();
-    carregarMeusChamados();
-  });
-}
 
 const btnHistoricoAdmin = document.getElementById("btn-historico-admin");
 if (btnHistoricoAdmin) {
@@ -593,14 +684,6 @@ if (btnHistoricoAdmin) {
     carregarTodosChamados();
     carregarMetricas();
     mostrarSecao(document.getElementById("secao-historico-admin"));
-  });
-}
-
-const btnVoltarHistoricoAdmin = document.getElementById("btn-voltar-historico-admin");
-if (btnVoltarHistoricoAdmin) {
-  btnVoltarHistoricoAdmin.addEventListener("click", () => {
-    irParaPrincipal();
-    carregarTodosChamados();
   });
 }
 
@@ -828,13 +911,6 @@ if (btnUnidadesAdmin) {
   });
 }
 
-const btnVoltarUnidadesAdmin = document.getElementById("btn-voltar-unidades-admin");
-if (btnVoltarUnidadesAdmin) {
-  btnVoltarUnidadesAdmin.addEventListener("click", () => {
-    irParaPrincipal();
-  });
-}
-
 // ---- Solicitações de cadastro (admin) ----
 async function carregarSolicitacoes() {
   const lista = document.getElementById("lista-solicitacoes");
@@ -907,13 +983,6 @@ if (btnSolicitacoesAdmin) {
   btnSolicitacoesAdmin.addEventListener("click", () => {
     carregarSolicitacoes();
     mostrarSecao(document.getElementById("secao-solicitacoes-admin"));
-  });
-}
-
-const btnVoltarSolicitacoesAdmin = document.getElementById("btn-voltar-solicitacoes-admin");
-if (btnVoltarSolicitacoesAdmin) {
-  btnVoltarSolicitacoesAdmin.addEventListener("click", () => {
-    irParaPrincipal();
   });
 }
 
@@ -1002,12 +1071,5 @@ if (btnUsuariosAdmin) {
   btnUsuariosAdmin.addEventListener("click", () => {
     carregarUsuarios();
     mostrarSecao(document.getElementById("secao-usuarios-admin"));
-  });
-}
-
-const btnVoltarUsuariosAdmin = document.getElementById("btn-voltar-usuarios-admin");
-if (btnVoltarUsuariosAdmin) {
-  btnVoltarUsuariosAdmin.addEventListener("click", () => {
-    irParaPrincipal();
   });
 }

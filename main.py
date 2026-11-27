@@ -2,6 +2,7 @@
 """Aplicação FastAPI principal do PWA de Chamados de TI."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from pathlib import Path
 
@@ -43,6 +44,8 @@ app.include_router(unidades.router)
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "app" / "static"), name="static")
 
-@app.get("/")
-def raiz() -> dict:
-    return {"status": "ok", "servico": "PWA de Chamados de TI"}
+
+@app.get("/", include_in_schema=False)
+def raiz() -> RedirectResponse:
+    """Quem abre a raiz (localhost:8000 ou IP:8000) cai direto no login."""
+    return RedirectResponse(url="/static/index.html")

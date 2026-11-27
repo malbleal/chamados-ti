@@ -1,4 +1,4 @@
-﻿const CACHE = "chamados-v7";
+﻿const CACHE = "chamados-v8";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

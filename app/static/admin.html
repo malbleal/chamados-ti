@@ -12,6 +12,7 @@
   <header class="topo">
     <strong>Chamados de TI — Painel</strong>
     <span class="acoes">
+      <button id="btn-inicio-admin">Chamados</button>
       <button id="btn-solicitacoes-admin">Solicitações</button>
       <button id="btn-usuarios-admin">Usuários</button>
       <button id="btn-unidades-admin">Unidades</button>
@@ -27,7 +28,6 @@
   </main>
 
   <section class="lista oculto" id="secao-historico-admin">
-    <button id="btn-voltar-historico-admin">Voltar</button>
     <h1>Métricas mensais</h1>
     <div id="abas-anos-metricas" class="abas-anos"></div>
     <table class="tabela-metricas">
@@ -41,7 +41,6 @@
   </section>
 
   <section class="lista oculto" id="secao-unidades-admin">
-    <button id="btn-voltar-unidades-admin">Voltar</button>
     <h1>Unidades</h1>
     <form id="form-nova-unidade">
       <label for="nome-unidade">Nova unidade</label>
@@ -53,21 +52,18 @@
   </section>
 
   <section class="lista oculto" id="secao-solicitacoes-admin">
-    <button id="btn-voltar-solicitacoes-admin">Voltar</button>
     <h1>Solicitações de cadastro</h1>
     <p class="dica">Ao aprovar, o usuário é criado com a senha padrão definida no .env e será obrigado a trocá-la no primeiro login.</p>
     <div id="lista-solicitacoes"></div>
   </section>
 
   <section class="lista oculto" id="secao-usuarios-admin">
-    <button id="btn-voltar-usuarios-admin">Voltar</button>
     <h1>Usuários</h1>
     <p class="dica">Para criar um novo administrador: aprove a solicitação dele em "Solicitações" e depois clique em "Tornar admin" aqui.</p>
     <div id="lista-usuarios"></div>
   </section>
 
   <section class="chat oculto" id="secao-detalhe-admin">
-    <button id="btn-voltar-admin">Voltar</button>
     <h2 id="detalhe-titulo-admin"></h2>
     <p class="meta" id="detalhe-info-admin"></p>
     <h3>Descrição</h3>
@@ -88,6 +84,7 @@
       <label for="mensagem-admin">Mensagem</label>
       <textarea id="mensagem-admin" rows="2" required></textarea>
       <button type="submit" class="botao-primario">Enviar</button>
+      <p class="msg" id="msg-mensagem-admin"></p>
     </form>
     <h3>Histórico</h3>
     <div id="detalhe-eventos-admin"></div>
